@@ -13,33 +13,39 @@ export default async function handler(req, res) {
   }
 
   try {
-    const flipkartRes = await fetch('https://2.rome.api.flipkart.com/api/4/page/fetch', {
-      method: 'POST',
+    const pidMatch = (req.body.pageUri || req.body).match(/pid=([^&]+)/);
+    const pid = pidMatch ? pidMatch[1] : '';
+
+    const flipkartRes = await fetch(`https://www.flipkart.com/product/p/itm?pid=${pid}`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'Origin': 'https://www.flipkart.com',
-        'Referer': 'https://www.flipkart.com/',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
-        'x-user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 FKUA/website/42/website/Desktop',
-        'X-Forwarded-For': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`
-      },
-      body: JSON.stringify({
-        "pageUri": req.body.pageUri || req.body,
-        "pageContext": {
-          "fetchSeoData": true
-        }
-      })
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      }
     });
 
     const data = await flipkartRes.text();
     
-    // If Flipkart didn't block us with an overloaded error, tell Vercel's CDN to cache this response
-    // for 24 hours so it never has to hit the serverless function again for this product!
-    if (!data.includes('site is overloaded') && flipkartRes.ok) {
+    // We are now fetching the HTML page directly using a Googlebot user agent.
+    // Let's extract the image URL from the HTML.
+    let imageUrl = '';
+    const match = data.match(/https:\/\/rukminim[^\"]*\{\@width\}[^\"]*\.(jpeg|jpg|png|webp)/i);
+    if (match) {
+        imageUrl = match[0];
+    } else {
+        // Fallback to og:image if the structured data fails
+        const ogMatch = data.match(/property="og:image"\s+content="([^"]+)"/i);
+        if (ogMatch) imageUrl = ogMatch[1];
+    }
+
+    // Since we are returning the URL directly now, we send it as JSON so the frontend can parse it.
+    if (imageUrl && !data.includes('site is overloaded') && flipkartRes.ok) {
       res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200');
+      return res.status(200).json({ url: imageUrl });
     }
     
-    return res.status(200).send(data);
+    return res.status(200).json({ url: null, html: data.substring(0, 500) });
   } catch (error) {
     console.error('Proxy error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });

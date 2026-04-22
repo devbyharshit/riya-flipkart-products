@@ -123,11 +123,22 @@ function useFlipkartImage(pid) {
     
     enqueueFetch(pid, bodyStr)
       .then(text => {
-        const match = text.match(/https:\/\/rukminim[^\"]*\{\@width\}[^\"]*\.(jpeg|jpg|png|webp)/i);
-        if (match && active) {
-          const finalUrl = match[0].replace('{@width}', '300').replace('{@height}', '300').replace('{@quality}', '70').replace('{@crop}', 'false');
-          saveCache(pid, finalUrl);
-          setImgUrl(finalUrl);
+        try {
+          const resObj = JSON.parse(text);
+          if (resObj.url && active) {
+            const finalUrl = resObj.url.replace('{@width}', '300').replace('{@height}', '300').replace('{@quality}', '70').replace('{@crop}', 'false');
+            saveCache(pid, finalUrl);
+            setImgUrl(finalUrl);
+            return;
+          }
+        } catch (e) {
+          // Fallback parsing if we somehow still get the raw HTML string
+          const match = text.match(/https:\/\/rukminim[^\"]*\{\@width\}[^\"]*\.(jpeg|jpg|png|webp)/i);
+          if (match && active) {
+            const finalUrl = match[0].replace('{@width}', '300').replace('{@height}', '300').replace('{@quality}', '70').replace('{@crop}', 'false');
+            saveCache(pid, finalUrl);
+            setImgUrl(finalUrl);
+          }
         }
       })
       .catch(() => {});
