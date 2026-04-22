@@ -14,15 +14,15 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 const TYPE_MAP = {
   "SOC":"Socks","TOP":"Top","TSH":"T-Shirt","TRO":"Trouser","DRE":"Dress",
   "SCF":"Scarf","SWS":"Sweatshirt","SWL":"Sweatshirt","SWT":"Sweatshirt",
-  "CAP":"Cap","MFL":"Muffler","JCK":"Jacket","LEG":"Leggings",
+  "CAP":"Cap","MFL":"Scarf","JCK":"Jacket","LEG":"Leggings",
   "LGG":"Leggings","JEA":"Jeans","SKI":"Skirt","AZT":"Co-ord Set",
-  "BRA":"Bra Top","PAN":"Panties","LIN":"Lingerie","SPW":"Sportswear",
-  "PON":"Poncho","STO":"Stockings","TML":"Thermal","BBO":"Baby Doll",
-  "NST":"Night Suit","NDN":"Dress","HAR":"Harem Pants","TKP":"Track Pants","STK":"Top",
-  "TGT":"Co-ord Set","CSP":"Sportswear","ABQ":"Hijab","HKF":"Hankies",
-  "CRG":"Cargo Pants","BBP":"Top","BPP":"Bra Petals","BPC":"Bra Tape",
-  "BRS":"Bra Strap","RUG":"Shrug","HRP":"Harem Pants",
-  "SHT":"Shirt","JEG":"Jegging","LWM":"Thermal","BRE":"Bra"
+  "BRA":"Bra","PAN":"Panties","LIN":"Lingerie","SPW":"Shapewear",
+  "PON":"Top","STO":"Stockings","TML":"Thermal","BBO":"Baby Doll",
+  "NST":"Night Suit","NDN":"Dress","HAR":"Trouser","TKP":"Track Pants","STK":"Top",
+  "TGT":"Co-ord Set","CSP":"Top","ABQ":"Scarf","HKF":"Hankies",
+  "CRG":"Cargo Pants","BBP":"Top","BPP":"Bra Accessories","BPC":"Bra Accessories",
+  "BRS":"Bra Accessories","RUG":"Shirt","HRP":"Trouser",
+  "SHT":"Shirt","JEG":"Leggings","LWM":"Thermal","BRE":"Bra"
 };
 
 function getType(id) {
@@ -49,13 +49,12 @@ const PRODUCTS = RAW.map(([id, price, cat, imgUrl]) => ({
 const GARMENT_TYPES = [...new Set(PRODUCTS.map(p => p.type))].sort();
 
 const ITEM_GROUPS = {
-  "Tops": ["Top", "T-Shirt", "Shirt", "Poncho", "Shrug"],
-  "Bottoms": ["Trouser", "Jeans", "Pants", "Capri", "Shorts", "Skirt", "Leggings", "Jegging", "Harem Pants", "Track Pants", "Cargo Pants"],
+  "Tops": ["Top", "T-Shirt", "Shirt"],
+  "Bottoms": ["Trouser", "Jeans", "Pants", "Capri", "Shorts", "Skirt", "Leggings", "Track Pants", "Cargo Pants"],
   "Dresses & Sets": ["Dress", "Maxi Dress", "Co-ord Set", "Night Suit"],
-  "Innerwear & Sleepwear": ["Bra", "Bra Top", "Panties", "Lingerie", "Baby Doll"],
-  "Winterwear": ["Sweatshirt", "Jacket", "Thermal", "Muffler"],
-  "Accessories": ["Socks", "Stockings", "Cap", "Hijab", "Scarf", "Hankies", "Bra Petals", "Bra Tape", "Bra Strap"],
-  "Activewear": ["Sportswear"]
+  "Innerwear & Sleepwear": ["Bra", "Bra Accessories", "Panties", "Lingerie", "Baby Doll", "Shapewear"],
+  "Winterwear": ["Sweatshirt", "Jacket", "Thermal"],
+  "Accessories": ["Socks", "Stockings", "Cap", "Scarf", "Hankies"]
 };
 
 const GROUPED_GARMENTS = Object.entries(ITEM_GROUPS).map(([group, types]) => ({
@@ -258,6 +257,21 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              {(search !== "" || catFilter !== "all" || typeFilter !== "all" || priceIdx !== 0) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearch("");
+                    setCatFilter("all");
+                    setTypeFilter("all");
+                    setPriceIdx(0);
+                  }}
+                  className="text-xs h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+                >
+                  Clear Filters
+                </Button>
+              )}
               <Filter className="h-4 w-4 text-muted-foreground hidden xl:block mr-1" />
               <div className="flex items-center gap-1.5 p-1 rounded-full bg-muted border border-border">
                 {PRICE_BUCKETS.map((b, i) => (
@@ -321,7 +335,7 @@ export default function App() {
                     )}
                     
                     <a href={p.url} target="_blank" rel="noreferrer" className="block cursor-pointer">
-                      <CardHeader className="p-0 items-center justify-center aspect-[3/4] w-full bg-white relative overflow-hidden rounded-t-xl group/image">
+                      <CardHeader className="p-0 items-center justify-center aspect-[4/5] w-full bg-white relative overflow-hidden rounded-t-xl group/image">
                         <div className="absolute top-2 left-2 z-10">
                           <Badge variant={p.cat === "C" ? "outline" : "secondary"} className={`text-[9px] px-2 py-0.5 h-5 uppercase tracking-wider font-bold backdrop-blur-md ${p.cat === "C" ? "bg-background/80 text-foreground border-border" : "bg-foreground/80 text-background border-transparent"}`}>
                             {CATEGORY_LABELS[p.cat]}
@@ -365,7 +379,7 @@ export default function App() {
                       </CardHeader>
                     </a>
                     
-                    <CardContent className="p-4 flex-1 flex flex-col">
+                    <CardContent className="p-3 flex-1 flex flex-col">
                       <div className="text-xs font-mono text-muted-foreground truncate mb-1" title={p.id}>{p.id}</div>
                       <div className="text-sm font-semibold leading-snug text-foreground line-clamp-2 mb-2 flex-1 group-hover:text-primary transition-colors" title={p.type}>
                         {p.type}
@@ -373,7 +387,7 @@ export default function App() {
                       <div className="text-lg font-bold text-foreground">₹{p.price}</div>
                     </CardContent>
                     
-                    <CardFooter className="p-4 pt-0 gap-2">
+                    <CardFooter className="p-3 gap-2">
                       <Button asChild variant="secondary" size="sm" className="w-full rounded-xl text-xs font-medium hover:bg-primary hover:text-primary-foreground transition-colors shadow-sm">
                         <a href={p.url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 w-full">
                           View Details <ExternalLink className="h-3.5 w-3.5" />
