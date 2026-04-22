@@ -13,17 +13,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    const flipkartRes = await fetch('https://2.rome.api.flipkart.com/api/4/page/fetch?cacheFirst=false', {
+    const flipkartRes = await fetch('https://2.rome.api.flipkart.com/api/4/page/fetch', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Origin': 'https://www.flipkart.com',
         'Referer': 'https://www.flipkart.com/',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
-        'x-user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 FKUA/website/42/website/Desktop',
-        'flipkart_secure': 'true'
+        'x-user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 FKUA/website/42/website/Desktop',
+        'X-Forwarded-For': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`
       },
-      body: typeof req.body === 'string' ? req.body : JSON.stringify(req.body)
+      body: JSON.stringify({
+        "pageUri": req.body.pageUri || req.body,
+        "pageContext": {
+          "fetchSeoData": true
+        }
+      })
     });
 
     const data = await flipkartRes.text();

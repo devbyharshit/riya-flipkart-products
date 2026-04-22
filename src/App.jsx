@@ -119,7 +119,7 @@ function useFlipkartImage(pid) {
       return;
     }
 
-    const bodyStr = JSON.stringify({ pageUri: `/a/p/b?pid=${pid}&marketplace=FLIPKART` });
+    const bodyStr = JSON.stringify({ pageUri: `/p/itm?pid=${pid}` });
     
     enqueueFetch(pid, bodyStr)
       .then(text => {
