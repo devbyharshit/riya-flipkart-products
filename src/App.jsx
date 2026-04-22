@@ -40,8 +40,8 @@ const PRICE_BUCKETS = [
 
 const CATEGORY_LABELS = { C: "Core", G: "Growth" };
 
-const PRODUCTS = RAW.map(([id, price, cat]) => ({
-  id, price, cat,
+const PRODUCTS = RAW.map(([id, price, cat, imgUrl]) => ({
+  id, price, cat, imgUrl,
   type: getType(id),
   url: `https://www.flipkart.com/product/p/itm?pid=${id}`,
 }));
@@ -69,89 +69,14 @@ if (otherTypes.length > 0) {
   GROUPED_GARMENTS.push({ group: "Other", items: otherTypes });
 }
 
-// --- Caching and Queueing Logic for Flipkart Images ---
-const imageCache = JSON.parse(localStorage.getItem('fk_img_cache') || '{}');
-
-const saveCache = (pid, url) => {
-  imageCache[pid] = url;
-  try {
-    localStorage.setItem('fk_img_cache', JSON.stringify(imageCache));
-  } catch (e) {} // ignore quota errors
-};
-
-const fetchQueue = [];
-let activeFetches = 0;
-const MAX_CONCURRENT = 3; // Limit simultaneous requests to avoid Flipkart "site overloaded" errors
-
-function enqueueFetch(pid, bodyStr) {
-  return new Promise((resolve, reject) => {
-    fetchQueue.push({ bodyStr, resolve, reject });
-    processNext();
-  });
-}
-
-function processNext() {
-  if (activeFetches >= MAX_CONCURRENT || fetchQueue.length === 0) return;
-  activeFetches++;
-  const { bodyStr, resolve, reject } = fetchQueue.shift();
-
-  fetch('/api/flipkart?cacheFirst=false', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: bodyStr
-  })
-  .then(r => r.text())
-  .then(resolve)
-  .catch(reject)
-  .finally(() => {
-    activeFetches--;
-    processNext();
-  });
-}
-
-function useFlipkartImage(pid) {
-  const [imgUrl, setImgUrl] = useState(imageCache[pid] || null);
-
-  useEffect(() => {
-    let active = true;
-    if (imageCache[pid]) {
-      setImgUrl(imageCache[pid]);
-      return;
-    }
-
-    const bodyStr = JSON.stringify({ pageUri: `/p/itm?pid=${pid}` });
-    
-    enqueueFetch(pid, bodyStr)
-      .then(text => {
-        try {
-          const resObj = JSON.parse(text);
-          if (resObj.url && active) {
-            const finalUrl = resObj.url.replace('{@width}', '300').replace('{@height}', '300').replace('{@quality}', '70').replace('{@crop}', 'false');
-            saveCache(pid, finalUrl);
-            setImgUrl(finalUrl);
-            return;
-          }
-        } catch (e) {
-          // Fallback parsing if we somehow still get the raw HTML string
-          const match = text.match(/https:\/\/rukminim[^\"]*\{\@width\}[^\"]*\.(jpeg|jpg|png|webp)/i);
-          if (match && active) {
-            const finalUrl = match[0].replace('{@width}', '300').replace('{@height}', '300').replace('{@quality}', '70').replace('{@crop}', 'false');
-            saveCache(pid, finalUrl);
-            setImgUrl(finalUrl);
-          }
-        }
-      })
-      .catch(() => {});
-
-    return () => { active = false; };
-  }, [pid]);
-
-  return imgUrl;
-}
+// --- Flipkart Images ---
 
 function ProductImage({ pid, fallback, className }) {
-  const imgUrl = useFlipkartImage(pid);
-  if (!imgUrl) return <>{fallback}</>;
+  const p = PRODUCTS.find(x => x.id === pid);
+  const imgUrl = p?.imgUrl;
+  
+  if (!imgUrl || imgUrl.includes('046495cc')) return <>{fallback}</>;
+  
   return <img src={imgUrl} alt={pid} className={`w-full h-full object-cover object-center mix-blend-multiply scale-[1.15] ${className || ""}`} />;
 }
 
