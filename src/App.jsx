@@ -210,8 +210,8 @@ export default function App() {
                       </div>
                       <CardFooter className="bg-background/50 p-3 flex gap-2">
                         <Button asChild variant="outline" size="sm" className="flex-1">
-                          <a href={p.url} target="_blank" rel="noreferrer">
-                            View Details <ExternalLink className="ml-2 h-3 w-3" />
+                          <a href={p.url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 w-full">
+                            View Details <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         </Button>
                         <Tooltip>
@@ -338,19 +338,46 @@ export default function App() {
                     )}
                     
                     <a href={p.url} target="_blank" rel="noreferrer" className="block cursor-pointer">
-                      <CardHeader className="p-0 items-center justify-center aspect-[3/4] w-full bg-white relative overflow-hidden rounded-t-xl">
+                      <CardHeader className="p-0 items-center justify-center aspect-[3/4] w-full bg-white relative overflow-hidden rounded-t-xl group/image">
                         <div className="absolute top-2 left-2 z-10">
                           <Badge variant={p.cat === "C" ? "outline" : "secondary"} className={`text-[9px] px-2 py-0.5 h-5 uppercase tracking-wider font-bold backdrop-blur-md ${p.cat === "C" ? "bg-background/80 text-foreground border-border" : "bg-foreground/80 text-background border-transparent"}`}>
                             {CATEGORY_LABELS[p.cat]}
                           </Badge>
                         </div>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <ProductImage pid={p.id} className="transition-transform duration-500 group-hover:scale-[1.25]" fallback={
+                          <ProductImage pid={p.id} className="transition-transform duration-500 group-hover/image:scale-[1.25]" fallback={
                             <div className="flex flex-col items-center justify-center w-full h-full text-slate-300">
-                              <ImageOff className="h-10 w-10 mb-2 drop-shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3" />
+                              <ImageOff className="h-10 w-10 mb-2 drop-shadow-sm transition-transform duration-500 group-hover/image:scale-110 group-hover/image:-rotate-3" />
                               <span className="text-[10px] font-semibold uppercase tracking-widest">{p.type}</span>
                             </div>
                           } />
+                        </div>
+                        
+                        <div className="absolute bottom-2 right-2 z-20">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant={picked ? "default" : "secondary"}
+                                size="icon"
+                                disabled={!canPick && !picked}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (canPick || picked) togglePick(p);
+                                }}
+                                className={`h-8 w-8 rounded-full shadow-md backdrop-blur-md transition-all ${
+                                  picked 
+                                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                                    : "bg-background/80 text-foreground border-border hover:bg-background hover:text-primary"
+                                }`}
+                              >
+                                <Heart className={`h-4 w-4 ${picked ? "fill-current" : ""}`} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {!canPick ? "Max 3 picks allowed" : picked ? "Remove pick" : "Add to picks"}
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </CardHeader>
                     </a>
@@ -364,31 +391,11 @@ export default function App() {
                     </CardContent>
                     
                     <CardFooter className="p-4 pt-0 gap-2">
-                      <Button asChild variant="secondary" size="sm" className="flex-1 text-xs font-medium hover:bg-primary hover:text-primary-foreground transition-colors">
-                        <a href={p.url} target="_blank" rel="noreferrer">
-                          View
+                      <Button asChild variant="secondary" size="sm" className="w-full rounded-xl text-xs font-medium hover:bg-primary hover:text-primary-foreground transition-colors shadow-sm">
+                        <a href={p.url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 w-full">
+                          View Details <ExternalLink className="h-3.5 w-3.5" />
                         </a>
                       </Button>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={picked ? "default" : "outline"}
-                            size="icon"
-                            disabled={!canPick && !picked}
-                            onClick={() => canPick && togglePick(p)}
-                            className={`shrink-0 transition-all ${
-                              picked 
-                                ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                                : "border-border hover:border-primary hover:text-primary"
-                            }`}
-                          >
-                            <Heart className={`h-4 w-4 ${picked ? "fill-current" : ""}`} />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {!canPick ? "Max 3 picks allowed" : picked ? "Remove pick" : "Add to picks"}
-                        </TooltipContent>
-                      </Tooltip>
                     </CardFooter>
                   </Card>
                 );
@@ -428,7 +435,7 @@ export default function App() {
           <Sheet>
             <SheetTrigger asChild>
               <Button
-                className="fixed bottom-6 right-6 z-[100] flex animate-float items-center gap-3 rounded-full px-6 py-6 font-semibold shadow-md transition-all hover:scale-105 bg-primary text-primary-foreground"
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex animate-float items-center gap-3 rounded-full px-6 py-6 font-semibold shadow-md transition-all hover:scale-105 bg-primary text-primary-foreground"
                 size="lg"
               >
                 <Heart className="h-5 w-5 fill-current animate-pulse" />
@@ -464,8 +471,8 @@ export default function App() {
                     </div>
                     <CardFooter className="bg-background/50 p-3 flex gap-2">
                       <Button asChild variant="outline" size="sm" className="flex-1">
-                        <a href={p.url} target="_blank" rel="noreferrer">
-                          View Details <ExternalLink className="ml-2 h-3 w-3" />
+                        <a href={p.url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 w-full">
+                          View Details <ExternalLink className="h-3.5 w-3.5" />
                         </a>
                       </Button>
                       <Tooltip>
