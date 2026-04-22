@@ -28,6 +28,12 @@ export default async function handler(req, res) {
 
     const data = await flipkartRes.text();
     
+    // If Flipkart didn't block us with an overloaded error, tell Vercel's CDN to cache this response
+    // for 24 hours so it never has to hit the serverless function again for this product!
+    if (!data.includes('site is overloaded') && flipkartRes.ok) {
+      res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200');
+    }
+    
     return res.status(200).send(data);
   } catch (error) {
     console.error('Proxy error:', error);

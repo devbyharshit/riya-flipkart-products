@@ -69,25 +69,72 @@ if (otherTypes.length > 0) {
   GROUPED_GARMENTS.push({ group: "Other", items: otherTypes });
 }
 
+// --- Caching and Queueing Logic for Flipkart Images ---
+const imageCache = JSON.parse(localStorage.getItem('fk_img_cache') || '{}');
+
+const saveCache = (pid, url) => {
+  imageCache[pid] = url;
+  try {
+    localStorage.setItem('fk_img_cache', JSON.stringify(imageCache));
+  } catch (e) {} // ignore quota errors
+};
+
+const fetchQueue = [];
+let activeFetches = 0;
+const MAX_CONCURRENT = 3; // Limit simultaneous requests to avoid Flipkart "site overloaded" errors
+
+function enqueueFetch(pid, bodyStr) {
+  return new Promise((resolve, reject) => {
+    fetchQueue.push({ bodyStr, resolve, reject });
+    processNext();
+  });
+}
+
+function processNext() {
+  if (activeFetches >= MAX_CONCURRENT || fetchQueue.length === 0) return;
+  activeFetches++;
+  const { bodyStr, resolve, reject } = fetchQueue.shift();
+
+  fetch('/api/flipkart?cacheFirst=false', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: bodyStr
+  })
+  .then(r => r.text())
+  .then(resolve)
+  .catch(reject)
+  .finally(() => {
+    activeFetches--;
+    processNext();
+  });
+}
+
 function useFlipkartImage(pid) {
-  const [imgUrl, setImgUrl] = useState(null);
+  const [imgUrl, setImgUrl] = useState(imageCache[pid] || null);
+
   useEffect(() => {
     let active = true;
-    fetch('/api/flipkart?cacheFirst=false', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pageUri: `/a/p/b?pid=${pid}&marketplace=FLIPKART` })
-    })
-    .then(r => r.text())
-    .then(text => {
-      const match = text.match(/https:\/\/rukminim[^\"]*\{\@width\}[^\"]*\.(jpeg|jpg|png|webp)/i);
-      if (match && active) {
-        setImgUrl(match[0].replace('{@width}', '300').replace('{@height}', '300').replace('{@quality}', '70').replace('{@crop}', 'false'));
-      }
-    })
-    .catch(() => {});
+    if (imageCache[pid]) {
+      setImgUrl(imageCache[pid]);
+      return;
+    }
+
+    const bodyStr = JSON.stringify({ pageUri: `/a/p/b?pid=${pid}&marketplace=FLIPKART` });
+    
+    enqueueFetch(pid, bodyStr)
+      .then(text => {
+        const match = text.match(/https:\/\/rukminim[^\"]*\{\@width\}[^\"]*\.(jpeg|jpg|png|webp)/i);
+        if (match && active) {
+          const finalUrl = match[0].replace('{@width}', '300').replace('{@height}', '300').replace('{@quality}', '70').replace('{@crop}', 'false');
+          saveCache(pid, finalUrl);
+          setImgUrl(finalUrl);
+        }
+      })
+      .catch(() => {});
+
     return () => { active = false; };
   }, [pid]);
+
   return imgUrl;
 }
 
