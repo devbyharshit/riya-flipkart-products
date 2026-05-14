@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Heart, Search, Filter, ExternalLink, Trash2, ShoppingBag, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
-import RAW from "./data.js";
+import RAW from "./data_new.js";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
